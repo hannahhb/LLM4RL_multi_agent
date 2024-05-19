@@ -4,24 +4,17 @@
 Recent studies have uncovered the potential of Large Language Models (LLMs) in addressing complex sequential decision-making tasks through the provision of high-level instructions. However, LLM-based agents lack specialization in tackling specific target problems, particularly in real-time dynamic environments. Additionally, deploying an LLM-based agent in practical scenarios can be both costly and time-consuming. On the other hand, reinforcement learning (RL) approaches train agents that specialize in the target task but often suffer from low sampling efficiency and high exploration costs. In this paper, we introduce a novel framework that addresses these challenges by training a smaller, specialized student RL agent using instructions from an LLM-based teacher agent. By incorporating the guidance from the teacher agent, the student agent can distill the prior knowledge of the LLM into its own model. Consequently, the student agent can be trained with significantly less data. Moreover, through further training with environment feedback, the student agent surpasses the capabilities of its teacher for completing the target task. We conducted experiments on challenging MiniGrid and Habitat environments, specifically designed for embodied AI research, to evaluate the effectiveness of our framework. The results clearly demonstrate that our approach achieves superior performance compared to strong baseline methods. Our code is available at https://github.com/ZJLAB-AMMI/LLM4Teach.
 
 ## Purpose
-This repo is intended to serve as a foundation with which you can reproduce the results of the experiments detailed in our paper, [Large Language Model as a Policy Teacher for Training Reinforcement Learning Agents](https://arxiv.org/abs/2311.13373).
+This repo is intended to serve as a foundation with which you can reproduce the results of the experiments detailed in our paper, [Large Language Model as a Policy Teacher for Training Reinforcement Learning Agents](https://arxiv.org/abs/2311.13373). This fork is adding multi agent experiment testing via the Multi Particulate environment from PettingZoo. 
 
 
 ## Running experiments
 ### Setup the LLMs
 
-1. For ChatGLM models, please use your own api_key and run the following code to launch the API
-```bash
-python3 -m utils.chatglm_api --host <API_host> --port <API_port>
-```
+Download the models from huggingface website (quantised being used in current implementation) and correct the path in planner.py
 
-2. For Vicuna models, please follow the instruction from [FastChat](https://github.com/lm-sys/FastChat) to install Vicuna model on local sever. Here are the commands to launch the API in terminal: 
-
-```bash
-python3 -m fastchat.serve.controller --host localhost --port <controller_port>        ### Launch the controller
-python3 -m fastchat.serve.model_worker --model-name '<model_name>' --model-path <Vicuna_path> --controller http://localhost:<controller_port> --port <model_port> --worker_address http://localhost:<model_port>        ### Launch the model worker
-python3 -m fastchat.serve.api --host <API_host> --port <API_port>        ### Launch the API
-```
+Models that have been tested to work on MacBook Pro M3 environment:
+Vicuna 13B v1.5 GGUF - https://huggingface.co/TheBloke/vicuna-13B-v1.5-GGUF
+Mistral 7B Instruct - https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.2
 
 
 ### Train and evaluate the models
@@ -30,8 +23,16 @@ Any algorithm can be run from the main.py entry point.
 To train on a SimpleDoorKey environment,
 
 ```bash
-python main.py train --task SimpleDoorKey --savedir train
+python main.py train --task SimpleDoorKey --savedir train --n_itr 4000 --use_teacher_policy
 ```
+
+can go for ~10k for more comprehensive results
+
+```bash
+python main.py train --task SimpleDoorKey --savedir train --n_itr 4000
+```
+
+for pure RL implementation
 
 <!--to train with given query result from LLM as teacher,
 
@@ -70,8 +71,9 @@ To see live training progress
 
 Run ```$ tensorboard --logdir=log``` then navigate to ```http://localhost:6006/``` in your browser
 
-## Citation
-If you find [our work](https://arxiv.org/abs/2311.13373) useful, please kindly cite: 
+## Acknowledgements
+This work is is adapted from 
+ [our work](https://arxiv.org/abs/2311.13373) 
 ```bibtex
 @inproceedings{zhou2024large,
   title={Large Language Model as a Policy Teacher for Training Reinforcement Learning Agents},
@@ -81,5 +83,4 @@ If you find [our work](https://arxiv.org/abs/2311.13373) useful, please kindly c
 }
 ```
 
-## Acknowledgements
-This work is supported by Exploratory Research Project (No.2022RC0AN02) of Zhejiang Lab.
+Supported by Exploratory Research Project (No.2022RC0AN02) of Zhejiang Lab.
