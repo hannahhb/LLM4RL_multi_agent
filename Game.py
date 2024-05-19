@@ -55,12 +55,13 @@ class Game:
                                         self.device, 
                                         self.logger.dir, 
                                         batch_size=self.batch_size, 
-                                        recurrent=self.recurrent)
+                                        recurrent=self.recurrent,
+                                        )
         
         # init buffer
         self.gamma = args.gamma
         self.lam = args.lam
-        self.buffer = algos.Buffer(self.gamma, self.lam, self.device)
+        self.buffer = algos.Buffer(self.gamma, self.lam, self.device, self.use_teacher_policy)
 
         # other settings
 

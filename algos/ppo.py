@@ -78,7 +78,11 @@ class PPO(Base):
         
         for _ in range(self.epochs):
             for batch in buffer.sample(self.batch_size, self.recurrent):
-                obs_batch, action_batch, return_batch, advantage_batch, values_batch, mask, log_prob_batch, teacher_prob_batch = batch
+                if buffer.use_teacher_policy:
+                    obs_batch, action_batch, return_batch, advantage_batch, values_batch, mask, log_prob_batch, teacher_prob_batch = batch
+                else:
+                    obs_batch, action_batch, return_batch, advantage_batch, values_batch, mask, log_prob_batch = batch
+                # obs_batch, action_batch, return_batch, advantage_batch, values_batch, mask, log_prob_batch, teacher_prob_batch = batch
                 
                 # get policy
                 states = self.model.init_states(self.device, obs_batch.size()[1]) if self.recurrent else None
@@ -86,7 +90,11 @@ class PPO(Base):
 
                 # update
                 entropy_loss = (pdf.entropy() * mask).mean()
-                kickstarting_loss = -(pdf.logits * teacher_prob_batch).sum(dim=-1).mean()
+                if buffer.use_teacher_policy:
+                    kickstarting_loss = -(pdf.logits * teacher_prob_batch).sum(dim=-1).mean()
+                else:
+                    kickstarting_loss = torch.tensor(0.0, device=self.device)
+                # kickstarting_loss = -(pdf.logits * teacher_prob_batch).sum(dim=-1).mean()
 
                 ratio = torch.exp(pdf.log_prob(action_batch) - log_prob_batch)
                 surr1 = ratio * advantage_batch * mask

@@ -41,10 +41,11 @@ class Buffer:
     A buffer for storing trajectory data and calculating returns for the policy
     and critic updates.
     """
-    def __init__(self, gamma=0.99, lam=0.95, device='cpu'):
+    def __init__(self, gamma=0.99, lam=0.95, device='cpu', use_teacher_policy=False):
         self.gamma = gamma
         self.lam = lam # unused
         self.device = device
+        self.use_teacher_policy = use_teacher_policy
 
     def __len__(self):
         return self.ptr
@@ -55,7 +56,9 @@ class Buffer:
         self.rewards = []
         self.values  = []
         self.log_probs = []
-        self.teacher_probs = []
+        
+        if(self.use_teacher_policy):
+            self.teacher_probs = []
 
         self.ptr = 0
         self.traj_idx = [0]
@@ -74,7 +77,8 @@ class Buffer:
         self.rewards += [reward.squeeze()]
         self.values  += [value.squeeze()]
         self.log_probs += [log_probs.squeeze()]
-        self.teacher_probs += [teacher_probs]
+        if self.use_teacher_policy:
+            self.teacher_probs += [teacher_probs]
         self.ptr += 1
 
     def finish_path(self, last_val=None):
@@ -92,14 +96,24 @@ class Buffer:
         self.ep_lens    += [len(rewards)]
     
     def get(self):
-        return(
-            np.array(self.obs),
-            np.array(self.actions),
-            np.array(self.returns),
-            np.array(self.values),
-            np.array(self.log_probs),
-            np.array(self.teacher_probs)
-        )
+        if self.use_teacher_policy:
+            return (
+                np.array(self.obs),
+                np.array(self.actions),
+                np.array(self.returns),
+                np.array(self.values),
+                np.array(self.log_probs),
+                np.array(self.teacher_probs)
+            )
+        else:
+            return (
+                np.array(self.obs),
+                np.array(self.actions),
+                np.array(self.returns),
+                np.array(self.values),
+                np.array(self.log_probs)
+            )
+
 
     def sample(self, batch_size=64, recurrent=False):
         if recurrent:
@@ -121,7 +135,10 @@ class Buffer:
             random_indices = SubsetRandomSampler(range(self.ptr))
             sampler = BatchSampler(random_indices, batch_size, drop_last=True)
 
-        observations, actions, returns, values, log_probs, teacher_probs = map(torch.Tensor, self.get())
+        observations, actions, returns, values, log_probs = map(torch.Tensor, self.get()[:5])
+
+        if self.use_teacher_policy:
+            teacher_probs = torch.Tensor(self.get()[5])
 
         advantages = returns - values
         advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-5)
@@ -135,7 +152,9 @@ class Buffer:
                 values_batch    = [values[self.traj_idx[i]:self.traj_idx[i+1]] for i in indices]
                 mask            = [torch.ones_like(r) for r in return_batch]
                 log_prob_batch  = [log_probs[self.traj_idx[i]:self.traj_idx[i+1]] for i in indices]
-                teacher_prob_batch  = [teacher_probs[self.traj_idx[i]:self.traj_idx[i+1]] for i in indices]
+
+                if self.use_teacher_policy:
+                    teacher_prob_batch  = [teacher_probs[self.traj_idx[i]:self.traj_idx[i+1]] for i in indices]
 
                 obs_batch       = pad_sequence(obs_batch, batch_first=False) # [unroll_length, num_trajs, ...]
                 action_batch    = pad_sequence(action_batch, batch_first=False).flatten(0,1)
@@ -144,7 +163,9 @@ class Buffer:
                 values_batch    = pad_sequence(values_batch, batch_first=False).flatten(0,1)
                 mask            = pad_sequence(mask, batch_first=False).flatten(0,1)
                 log_prob_batch  = pad_sequence(log_prob_batch, batch_first=False).flatten(0,1)
-                teacher_prob_batch = pad_sequence(teacher_prob_batch, batch_first=False).flatten(0,1)
+
+                if self.use_teacher_policy:
+                    teacher_prob_batch = pad_sequence(teacher_prob_batch, batch_first=False).flatten(0,1)
             else:
                 obs_batch       = observations[indices]
                 action_batch    = actions[indices]
@@ -153,7 +174,28 @@ class Buffer:
                 values_batch    = values[indices]
                 mask            = torch.FloatTensor([1])
                 log_prob_batch  = log_probs[indices]
-                teacher_prob_batch = teacher_probs[indices]
+                if self.use_teacher_policy:
+                    teacher_prob_batch = teacher_probs[indices]
 
 
-            yield obs_batch.to(self.device), action_batch.to(self.device), return_batch.to(self.device), advantage_batch.to(self.device), values_batch.to(self.device), mask.to(self.device), log_prob_batch.to(self.device), teacher_prob_batch.to(self.device)
+            if self.use_teacher_policy:
+                yield (
+                    obs_batch.to(self.device),
+                    action_batch.to(self.device),
+                    return_batch.to(self.device),
+                    advantage_batch.to(self.device),
+                    values_batch.to(self.device),
+                    mask.to(self.device),
+                    log_prob_batch.to(self.device),
+                    teacher_prob_batch.to(self.device)
+                )
+            else:
+                yield (
+                    obs_batch.to(self.device),
+                    action_batch.to(self.device),
+                    return_batch.to(self.device),
+                    advantage_batch.to(self.device),
+                    values_batch.to(self.device),
+                    mask.to(self.device),
+                    log_prob_batch.to(self.device)
+                )

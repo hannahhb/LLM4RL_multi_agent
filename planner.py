@@ -31,9 +31,9 @@ class Base_Planner(ABC):
         self.prompt_prefix = prefix
         self.plans_dict = {}
         self.mediator = None
-        llm_model_path = "./vicuna-13b-v1.5.Q5_K_S.gguf"
+        llm_model_path = "models/vicuna-13b-v1.5.Q5_K_S.gguf"
         self.llm = Llama(model_path=llm_model_path,
-                    n_gpu_layers= 20, # Uncomment to use GPU acceleration,
+                    n_gpu_layers= -1, # Uncomment to use GPU acceleration,
                     n_ctx = 2048)
 
         self.dialogue_system = ''
