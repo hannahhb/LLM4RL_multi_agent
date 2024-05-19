@@ -1,9 +1,12 @@
+# %%writefile /content/LLM4Teach/planner.py
+
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
+
 '''
 @File    :   planner.py
 @Time    :   2023/05/16 09:12:11
-@Author  :   Hu Bin 
+@Author  :   Hu Bin
 @Version :   1.0
 @Desc    :   None
 '''
@@ -13,6 +16,7 @@ import os, requests
 from typing import Any
 from mediator import *
 from utils import global_param
+from llama_cpp import Llama
 
 
 from abc import ABC, abstractmethod
@@ -27,12 +31,16 @@ class Base_Planner(ABC):
         self.prompt_prefix = prefix
         self.plans_dict = {}
         self.mediator = None
-        
-        self.dialogue_system = ''               
+        llm_model_path = "./vicuna-13b-v1.5.Q5_K_S.gguf"
+        self.llm = Llama(model_path=llm_model_path,
+                    n_gpu_layers= 20, # Uncomment to use GPU acceleration,
+                    n_ctx = 2048)
+
+        self.dialogue_system = ''
         self.dialogue_user = ''
-        self.dialogue_logger = ''     
+        self.dialogue_logger = ''
         self.show_dialogue = False
-        
+
         if not offline:
             self.llm_model = "vicuna-33b"
             self.llm_url = 'http://localhost:3300/v1/chat/completions'
@@ -41,7 +49,7 @@ class Base_Planner(ABC):
             self.plans_dict = {}
             if self.llm_model == "vicuna-33b":
                 self.init_llm()
-        
+
     def reset(self, show=False):
         self.dialogue_user = ''
         self.dialogue_logger = ''
@@ -52,7 +60,7 @@ class Base_Planner(ABC):
         self.mediator.reset()
         # if not self.offline:
         #     self.online_planning("reset")
-        
+
     def init_llm(self):
         self.dialogue_system += self.prompt_prefix
 
@@ -61,51 +69,49 @@ class Base_Planner(ABC):
         while server_error_cnt < 10:
             try:
                 headers = {'Content-Type': 'application/json'}
-                
+
                 data = {'model': self.llm_model, "messages":[{"role": "system", "content": self.prompt_prefix}]}
                 response = requests.post(self.llm_url, headers=headers, json=data)
-                
+
                 if response.status_code == 200:
                     result = response.json()
                     break
                 else:
-                    assert False, f"fail to initialize: status code {response.status_code}"                
-                    
+                    assert False, f"fail to initialize: status code {response.status_code}"
+
             except Exception as e:
                 server_error_cnt += 1
                 print(f"fail to initialize: {e}")
 
     def query_codex(self, prompt_text):
-        server_error_cnt = 0
-        while server_error_cnt < 10:
-            try:
-                #response =  openai.Completion.create(prompt_text)
-                headers = {'Content-Type': 'application/json'}
-                
-                # print(f"user prompt:{prompt_text}")
-                if self.llm_model == "chatglm_Turbo":
-                    data = {'model': self.llm_model, "prompt":[{"role": "user", "content": self.prompt_prefix + prompt_text}]}     
-                elif self.llm_model == "vicuna-33b":
-                    data = {'model': self.llm_model, "messages":[{"role": "user", "content": prompt_text}]}
-                response = requests.post(self.llm_url, headers=headers, json=data)
-
-                if response.status_code == 200:
-                    result = response.json()
-                    break
-                else:
-                    assert False, f"fail to query: status code {response.status_code}"
-                    
-            except Exception as e:
-                server_error_cnt += 1
-                print(f"fail to query: {e}")
-                
         try:
-            plan = re.search("Action[s]*\:\s*\{([\w\s\<\>\,]*)\}", result, re.I | re.M).group(1)
-            return plan
-        except:
-            print(f"LLM response invalid format: '{result}'.")
-            return self.query_codex(prompt_text)   
-        
+            prompt = self.prompt_prefix + prompt_text
+            output = self.llm(prompt, temperature=0.9, max_tokens = 200)
+            pad = "=================================="
+            print(f"{pad}PROMPT IS:{pad}\n{prompt}\n")
+            print(f"{pad}OUTPUT IS:{pad}\n{output}\n")
+
+            if 'choices' in output and len(output['choices']) > 0:
+                    plan_text = output['choices'][0]['text'].strip()  # Get the text and strip any extra whitespace
+    #                 print(plan_text)
+                    # Use regex to extract the action plan contained within "Action: { ... }"
+                    match = re.search(r"Action[s]*\:\s*\{([\w\s\<\>\,]*)\}", plan_text, re.I | re.M)
+                    if match:
+                        action_plan = match.group(1).strip()  # Extract and strip whitespace from the matched action plan
+                        return action_plan
+                    else:
+                        print("No action plan found in the response.")
+                        return plan_text  # Return the full text if no action plan is found
+            else:
+                raise ValueError("No choices returned in the response.")
+        except Exception as e:
+            print(f"Error querying LLM: {e}")
+            return None  # You might want to retry or handle errors differently depending on your use case
+
+
+
+
+
     def plan(self, text, n_ask=10):
         if text in self.plans_dict.keys():
             plans, probs = self.plans_dict[text]
@@ -118,15 +124,15 @@ class Base_Planner(ABC):
                     plans[plan] += 1/n_ask
                 else:
                     plans[plan] = 1/n_ask
-            
+
             plans, probs = list(plans.keys()), list(plans.values())
             self.plans_dict[text] = (plans, probs)
-            
+
             for k, v in self.plans_dict.items():
                 print(f"{k}:{v}")
 
         return plans, probs
-    
+
     def __call__(self, obs):
         # self.mediator.reset()
         text = self.mediator.RL2LLM(obs)
@@ -135,10 +141,10 @@ class Base_Planner(ABC):
         if self.show_dialogue:
             print(self.dialogue_user)
         skill_list, probs = self.mediator.LLM2RL(plans, probs)
-        
+
         return skill_list, probs
-    
-    
+
+
 
 class SimpleDoorKey_Planner(Base_Planner):
     def __init__(self, offline, soft, prefix):
@@ -152,8 +158,8 @@ class SimpleDoorKey_Planner(Base_Planner):
                 "Agent sees <nothing>, holds <key>."     : [["explore", "go to <door>, open <door>", "explore, go to <door>, open <door>", "explore, go to <door>", "explore, open <door>", "go to <door>, pick up <handle>, use <key>"], [0.68, 0.22, 0.04, 0.02, 0.02, 0.02]],
                 "Agent sees <door>, holds <key>."        : [["go to <door>, open <door> with <key>", "go to <door>, open <door>", "go to <key>, pick up <key>, go to <door>, open <door>", "explore, go to <door>"], [0.62, 0.3, 0.06, 0.02]],
                 "Agent sees <key>, <door>, holds <nothing>." : [["go to <key>, pick up <key>, go to <door>, open <door>", "go to <key>, pick up <key>, open <door>", "pick up <key>, go to <door>, open <door>", "go to <key>, go to <door>, use <key>", "go to <key>, pick up <key>, explore"], [0.84, 0.08, 0.04, 0.02, 0.02]]
-}     
-    
+}
+
 
 class ColoredDoorKey_Planner(Base_Planner):
     def __init__(self, offline, soft, prefix):
@@ -176,7 +182,7 @@ class ColoredDoorKey_Planner(Base_Planner):
                 "Agent sees <color1 key>, <color2 key>, <color2 door>, holds <nothing>.": [["go to <color2 key>, pick up <color2 key>","pick up <color2 key>","go to <color1 key>, pick up <color1 key>"],[0.72,0.24,0.04]],
                 "Agent sees <color1 key>, <color2 key>, <color1 door>, holds <nothing>.": [["go to <color1 key>, pick up <color1 key>"," pick up <color1 key>"],[0.94,0.06]],
 }
-        
+
     def plan(self, text):
         pattern= r'\b(blue|green|grey|purple|red|yellow)\b'
         color_words = re.findall(pattern, text)
@@ -214,9 +220,9 @@ class TwoDoor_Planner(Base_Planner):
                 "Agent sees <door1>, <door2>, holds <nothing>."  : [["explore"], [1.0]],
                 "Agent sees <key>, <door1>, <door2>, holds <nothing>.": [["go to <key>, pick up <key>"], [1.0]],
                 "Agent sees <door1>, <door2>, holds <key>.": [["go to <door1>, open <door1>", "go to <door2>, open <door2>"], [0.5, 0.5]],
-            }  
-                                                            
-                                                            
+            }
+
+
 def Planner(task, offline=True, soft=False, prefix=''):
     if task.lower() == "simpledoorkey":
         planner = SimpleDoorKey_Planner(offline, soft, prefix)
@@ -227,5 +233,4 @@ def Planner(task, offline=True, soft=False, prefix=''):
     elif task.lower() == "twodoor":
         planner = TwoDoor_Planner(offline, soft, prefix)
     return planner
-                                                            
-                                                            
+

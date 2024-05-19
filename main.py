@@ -45,9 +45,7 @@ def evaluate(args):
     print("Mean length:", np.mean(eval_lens))
     print("Success rate:", np.mean(eval_success))
 
-
-if __name__ == "__main__":
-    utils.print_logo(subtitle="Maintained by Research Center for Applied Mathematics and Machine Intelligence, Zhejiang Lab")
+def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--task", type=str, default="SimpleDoorKey", help="SimpleDoorKey, KeyInBox, RandomBoxKey, ColoredDoorKey, DynamicDoorKey") 
     
@@ -75,7 +73,13 @@ if __name__ == "__main__":
     parser.add_argument("--num_eval", type=int, default=10)
     parser.add_argument("--eval_interval", type=int, default=10)
     parser.add_argument("--save_interval", type=int, default=100)
-    
+    parser.add_argument('--use_teacher_policy', action='store_true', help='Use teacher policy if available')
+
+    return parser 
+
+if __name__ == "__main__":
+    utils.print_logo(subtitle="Maintained by Research Center for Applied Mathematics and Machine Intelligence, Zhejiang Lab")
+    parser = parse_args()
     if sys.argv[1] == 'eval':
         sys.argv.remove(sys.argv[1])
         args = parser.parse_args()

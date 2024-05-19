@@ -28,9 +28,11 @@ task_info_json = os.path.join(prefix, "prompt/task_info.json")
 class Game:
     def __init__(self, args, training=True):
         # init seed
+        
         self.seed = args.seed
         self.setup_seed(args.seed)
-        
+        self.use_teacher_policy = args.use_teacher_policy
+
         # init env
         self.load_task_info(args.task, args.frame_stack, args.offline_planner, args.soft_planner)
 
@@ -61,6 +63,7 @@ class Game:
         self.buffer = algos.Buffer(self.gamma, self.lam, self.device)
 
         # other settings
+
         self.n_itr = args.n_itr
         self.traj_per_itr = args.traj_per_itr
         self.num_eval = args.num_eval
@@ -92,7 +95,9 @@ class Game:
         self.max_ep_len = self.env.max_steps
 
         prefix = task_info[task]['description'] + task_info[task]['example']
-        self.teacher_policy = TeacherPolicy(task, offline, soft, prefix, self.action_space, self.env.agent_view_size)
+
+        if(self.use_teacher_policy):
+            self.teacher_policy = TeacherPolicy(task, offline, soft, prefix, self.action_space, self.env.agent_view_size)
 
             
     def train(self):
@@ -181,8 +186,8 @@ class Game:
 
     def collect(self):
         '''
-        collect episodic data.
-        ''' 
+        Collect episodic data.
+        '''
         with torch.no_grad():
             obs = self.env.reset()
             done = False 
@@ -192,30 +197,34 @@ class Game:
             mask = torch.FloatTensor([1]).to(self.device) # not done until episode ends
             states = self.student_policy.model.init_states(self.device) if self.recurrent else None
             
-            # reset teacher policy
-            self.teacher_policy.reset()
+            if self.use_teacher_policy:
+                # reset teacher policy
+                self.teacher_policy.reset()
 
             while not done and ep_len < self.max_ep_len:
                 # get action from student policy
                 dist, value, states = self.student_policy(torch.Tensor(obs).to(self.device),
-                                                          mask, states)
+                                                        mask, states)
                 action = dist.sample()
                 log_probs = dist.log_prob(action)
                 action = action.to("cpu").numpy()
                 
-                # get action from teacher policy
-                teacher_probs = self.teacher_policy(obs[0])
-                
+                if self.use_teacher_policy:
+                    # get action from teacher policy
+                    teacher_probs = self.teacher_policy(obs[0])
+                else:
+                    teacher_probs = None  # or some default value
+
                 # interact with env
                 next_obs, reward, done, info = self.env.step(action)
-    
+
                 # store in buffer
                 self.buffer.store(obs, 
-                                  action, 
-                                  reward, 
-                                  value.to("cpu").numpy(), 
-                                  log_probs.to("cpu").numpy(), 
-                                  teacher_probs)
+                                action, 
+                                reward, 
+                                value.to("cpu").numpy(), 
+                                log_probs.to("cpu").numpy(), 
+                                teacher_probs)
                 obs = next_obs
                 ep_len += 1
             if done:
@@ -224,6 +233,7 @@ class Game:
                 value = self.student_policy(torch.Tensor(obs).to(self.device), 
                                             mask, states)[1].to("cpu").item()
             self.buffer.finish_path(last_val=value)
+
         
         
     def evaluate(self, itr=None, seed=None, record_frames=True, deterministic=False, teacher_policy=False):
@@ -285,7 +295,7 @@ class Game:
                 
             ep_success = 1 if ep_return > 0 else 0
 
-            # save vedio
+            # save video
             if record_frames:
                 height, width, layers = img.shape
                 size = (width,height)
