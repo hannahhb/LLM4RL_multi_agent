@@ -26,13 +26,15 @@ To train on a SimpleDoorKey environment,
 python main.py train --task SimpleDoorKey --savedir train --n_itr 4000 --use_teacher_policy
 ```
 
-can go for ~10k for more comprehensive results
+can go for ~10k for more comprehensive results. 
+
+
+For pure RL implementation,
 
 ```bash
 python main.py train --task SimpleDoorKey --savedir train --n_itr 4000
 ```
 
-for pure RL implementation
 
 <!--to train with given query result from LLM as teacher,
 
