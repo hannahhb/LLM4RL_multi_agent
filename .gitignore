@@ -151,7 +151,7 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 
-**/logs
+**/log
 **/models
 
 # PyCharm
