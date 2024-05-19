@@ -42,7 +42,7 @@ class Game:
         # init policy
         if args.loaddir:
             model_dir = os.path.join(args.logdir, args.policy, args.task, args.loaddir, args.loadmodel)
-            policy = torch.load(model_dir)
+            policy = torch.load(model_dir,  map_location=torch.device('mps'))
         else:
             policy = None
         self.device = args.device
