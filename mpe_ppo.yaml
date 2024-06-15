@@ -1,0 +1,12 @@
+wandb_entity: hannahb # This is used to specify the name of your own team.
+experiment_name: ppo # This is used to specify the experiment name.
+lr: 7e-4
+run_dir: ./exp_results/ # This is used to specify where experimental data will be saved.
+log_interval: 10 # This specifies how often (in terms of episodes) wandb should upload data during training.
+seed: 0 # Set seed for reproducible results across experiments.
+critic_lr: 7e-4
+episode_length: 25
+use_recurrent_policy: true
+use_joint_action_loss: true
+use_valuenorm: true
+use_adv_normalize: true

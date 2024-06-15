@@ -1,0 +1,22 @@
+2024-05-24 12:19:33,507 [INFO] Episode: 0/10
+2024-05-24 12:19:34,036 [INFO] 
+	agent_0/rollout_episode_reward: -169.44956970214844
+	agent_1/rollout_episode_reward: -169.44956970214844
+	agent_2/rollout_episode_reward: -169.44956970214844
+	FPS: 4535
+	rollout_episode_reward: -169.44956970214844
+
+2024-05-24 12:19:34,037 [INFO] 
+	value_loss: 0.09720935225486756
+	policy_loss: -0.013972163293510675
+	dist_entropy: 0.6378943860530853
+	actor_grad_norm: 0.5730383992195129
+	critic_grad_norm: 0.21560946106910706
+	ratio: 0.9930573105812073
+
+2024-05-24 12:19:34,038 [INFO] Episode: 1/10
+2024-05-24 12:19:34,579 [INFO] Episode: 2/10
+2024-05-24 12:19:35,137 [INFO] Episode: 3/10
+2024-05-24 12:19:35,681 [INFO] Episode: 4/10
+2024-05-24 12:19:52,268 [DEBUG] Starting new HTTPS connection (1): o151352.ingest.sentry.io:443
+2024-05-24 12:19:52,396 [DEBUG] https://o151352.ingest.sentry.io:443 "POST /api/4504800232407040/envelope/ HTTP/1.1" 200 0

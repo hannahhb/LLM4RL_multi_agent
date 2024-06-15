@@ -78,7 +78,7 @@ def parse_args():
     return parser 
 
 if __name__ == "__main__":
-    utils.print_logo(subtitle="Maintained by Research Center for Applied Mathematics and Machine Intelligence, Zhejiang Lab")
+    # utils.print_logo(subtitle="Maintained by Research Center for Applied Mathematics and Machine Intelligence, Zhejiang Lab")
     parser = parse_args()
     if sys.argv[1] == 'eval':
         sys.argv.remove(sys.argv[1])

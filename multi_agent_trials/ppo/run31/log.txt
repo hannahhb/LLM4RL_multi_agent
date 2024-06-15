@@ -1,0 +1,25 @@
+2024-05-24 12:19:04,405 [INFO] Episode: 0/10
+2024-05-24 12:19:04,946 [INFO] 
+	agent_0/rollout_episode_reward: -168.4691925048828
+	agent_1/rollout_episode_reward: -168.4691925048828
+	agent_2/rollout_episode_reward: -168.4691925048828
+	FPS: 4592
+	rollout_episode_reward: -168.4691925048828
+
+2024-05-24 12:19:04,947 [INFO] 
+	value_loss: 0.10735036954283714
+	policy_loss: -0.01795631689019501
+	dist_entropy: 0.7090099573135376
+	actor_grad_norm: 0.47769445180892944
+	critic_grad_norm: 0.18548044562339783
+	ratio: 0.9930376648902893
+
+2024-05-24 12:19:04,948 [INFO] Episode: 1/10
+2024-05-24 12:19:05,507 [INFO] Episode: 2/10
+2024-05-24 12:19:06,054 [INFO] Episode: 3/10
+2024-05-24 12:19:06,641 [INFO] Episode: 4/10
+2024-05-24 12:19:07,224 [INFO] Episode: 5/10
+2024-05-24 12:19:07,929 [INFO] Episode: 6/10
+2024-05-24 12:19:08,610 [INFO] Episode: 7/10
+2024-05-24 12:19:09,212 [INFO] Episode: 8/10
+2024-05-24 12:19:09,877 [INFO] Episode: 9/10

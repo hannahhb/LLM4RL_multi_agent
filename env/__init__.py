@@ -3,7 +3,7 @@ from .doorkey import *
 from .lavadoorkey import *
 from .twodoor import *
 from .coloreddoorkey import *
-
+from .lockedhallway import *
 
 gym.envs.register(
     id='MiniGrid-SimpleDoorKey-Min5-Max10-View3',
@@ -42,3 +42,14 @@ gym.envs.register(
             'agent_view_size' : 3, \
             'max_steps' : 150},
 )
+
+CONFIGURATIONS = {
+    'MultiGrid-LockedHallway-2Rooms-v0': (LockedHallwayEnv, {'num_rooms': 2}),
+    'MultiGrid-LockedHallway-4Rooms-v0': (LockedHallwayEnv, {'num_rooms': 4}),
+    'MultiGrid-LockedHallway-6Rooms-v0': (LockedHallwayEnv, {'num_rooms': 6}),
+}
+
+# Register environments with gymnasium
+from gymnasium.envs.registration import register
+for name, (env_cls, config) in CONFIGURATIONS.items():
+    register(id=name, entry_point=env_cls, kwargs=config)
