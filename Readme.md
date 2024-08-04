@@ -1,10 +1,7 @@
 # [Large Language Model as a Policy Teacher for Training Reinforcement Learning Agents](https://arxiv.org/abs/2311.13373)
 
-## Abstract 
-Recent studies have uncovered the potential of Large Language Models (LLMs) in addressing complex sequential decision-making tasks through the provision of high-level instructions. However, LLM-based agents lack specialization in tackling specific target problems, particularly in real-time dynamic environments. Additionally, deploying an LLM-based agent in practical scenarios can be both costly and time-consuming. On the other hand, reinforcement learning (RL) approaches train agents that specialize in the target task but often suffer from low sampling efficiency and high exploration costs. In this paper, we introduce a novel framework that addresses these challenges by training a smaller, specialized student RL agent using instructions from an LLM-based teacher agent. By incorporating the guidance from the teacher agent, the student agent can distill the prior knowledge of the LLM into its own model. Consequently, the student agent can be trained with significantly less data. Moreover, through further training with environment feedback, the student agent surpasses the capabilities of its teacher for completing the target task. We conducted experiments on challenging MiniGrid and Habitat environments, specifically designed for embodied AI research, to evaluate the effectiveness of our framework. The results clearly demonstrate that our approach achieves superior performance compared to strong baseline methods. Our code is available at https://github.com/ZJLAB-AMMI/LLM4Teach.
-
 ## Purpose
-This repo is intended to serve as a foundation with which you can reproduce the results of the experiments detailed in our paper, [Large Language Model as a Policy Teacher for Training Reinforcement Learning Agents](https://arxiv.org/abs/2311.13373). This fork is adding multi agent experiment testing via the Multi Particulate environment from PettingZoo. 
+This repo is intended to serve as a foundation with which you can reproduce the results of the experiments detailed in our paper, [Large Language Model as a Policy Teacher for Training Reinforcement Learning Agents](https://arxiv.org/abs/2311.13373). This fork is adding multi agent experiment testing via the Multi Particulate environment from PettingZoo. A research report for the multi-agent implementation details and progress made as of 06/2024 can be found [here](report.pdf). 
 
 
 ## Running experiments
@@ -76,13 +73,3 @@ Run ```$ tensorboard --logdir=log``` then navigate to ```http://localhost:6006/`
 ## Acknowledgements
 This work is is adapted from 
  [our work](https://arxiv.org/abs/2311.13373) 
-```bibtex
-@inproceedings{zhou2024large,
-  title={Large Language Model as a Policy Teacher for Training Reinforcement Learning Agents},
-  author={Zhou, Zihao and Hu, Bin and Zhao, Chenyang and Zhang, Pu and Liu, Bin},
-  booktitle={The 33rd International Joint Conference on Artificial Intelligence (IJCAI 2024)},
-  year={2024}
-}
-```
-
-Supported by Exploratory Research Project (No.2022RC0AN02) of Zhejiang Lab.
